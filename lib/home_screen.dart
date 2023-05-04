@@ -1,7 +1,4 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
-import 'main.dart';
 import 'mqtt_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -113,26 +110,21 @@ class _HomeScreenState extends State<HomeScreen> {
               connectionStates(),
               const SizedBox(height: 20),
               if (messages.isEmpty) const Text('No Message Received'),
-              if (messages.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Received Messages:'),
-                    const SizedBox(height: 10),
-                    ListView.builder(
-                      itemBuilder: (BuildContext context, int index) {
-                        return Card(
-                          child: ListTile(
-                            title: Text(messages[index]),
-                          ),
-                        );
-                      },
-                      itemCount: messages.length,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                    ),
-                  ],
+              if (messages.isNotEmpty) const Text('Received Messages:'),
+              const SizedBox(height: 10),
+              Expanded(
+                child: ListView.builder(
+                  itemBuilder: (BuildContext context, int index) {
+                    return Card(
+                      child: ListTile(
+                        title: Text(messages[index]),
+                      ),
+                    );
+                  },
+                  itemCount: messages.length,
+                  shrinkWrap: true,
                 ),
+              ),
             ],
           )),
     );

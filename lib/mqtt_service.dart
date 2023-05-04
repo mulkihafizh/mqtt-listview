@@ -11,7 +11,7 @@ class MqttManager {
   static Stream<MqttConnectionState> get connectionStateStream =>
       _connectionStateController.stream;
   static void connect() async {
-    client = MqttServerClient('10.0.2.2', '');
+    client = MqttServerClient('192.168.150.25', '');
     client!.port = 1883;
     client!.logging(on: true);
     client!.onDisconnected = () {
