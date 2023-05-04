@@ -140,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
     MqttManager.onConnected = () {
       MqttManager.subscribe(topic, (String message) {
         setState(() {
-          messages.add(message);
+          messages.insert(0, message);
           print(messages);
         });
       });
