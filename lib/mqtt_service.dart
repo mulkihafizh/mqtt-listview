@@ -1,37 +1,49 @@
 import 'dart:async';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'home_screen.dart';
 
 class MqttManager {
-  static MqttServerClient? client;
+  static MqttServerClient? client = MqttServerClient(host, '');
   static Function? onConnected;
   static Function? onDisconnected;
-  static StreamController<MqttConnectionState> _connectionStateController =
-      StreamController<MqttConnectionState>();
+  static Function()? onDisconnectedCall;
+  static bool intentionalDisconnection = false;
+  static final StreamController<MqttConnectionState>
+      _connectionStateController = StreamController<MqttConnectionState>();
   static Stream<MqttConnectionState> get connectionStateStream =>
       _connectionStateController.stream;
-  static void connect() async {
-    client = MqttServerClient('192.168.150.25', '');
-    client!.port = 1883;
-    client!.logging(on: true);
-    client!.onDisconnected = () {
-      print('Disconnected');
-      _connectionStateController.add(MqttConnectionState.connected);
-      onDisconnected?.call();
-    };
-    client!.onConnected = () {
-      print('Connected');
+  static void connect(
+    host,
+  ) async {
+    client?.port = 1883;
+    client?.logging(on: true);
+    client?.keepAlivePeriod = 30;
+    client?.setProtocolV311();
+
+    client?.onDisconnected = () {
+      print("Disconnected | Time: ${DateTime.now().toUtc()}");
       _connectionStateController.add(MqttConnectionState.disconnected);
+      onDisconnected?.call();
+      if (!intentionalDisconnection) {
+        onDisconnectedCall?.call();
+      }
+    };
+    client?.onConnected = () {
+      intentionalDisconnection = false;
+      print('Connected');
+      connectionStatus = 'Connected';
+      _connectionStateController.add(MqttConnectionState.connected);
       onConnected?.call();
     };
-    client!.onSubscribed = (String topic) {
+    client?.onSubscribed = (String topic) {
       print('Subscribed to topic $topic');
     };
-    client!.onSubscribeFail = (String topic) {
+    client?.onSubscribeFail = (String topic) {
       print('Failed to subscribe to topic $topic');
     };
     try {
-      await client?.connect('mulki', 'mulki123');
+      await client?.connect('/smkwikramabogor:smkwikramabogor', 'qwerty');
     } catch (e) {
       print('Exception: $e');
       client?.disconnect();
@@ -39,8 +51,8 @@ class MqttManager {
   }
 
   static void subscribe(String topic, Function(String) onMessage) {
-    client!.subscribe(topic, MqttQos.atLeastOnce);
-    client!.updates!.listen((List<MqttReceivedMessage<MqttMessage>> messages) {
+    client?.subscribe(topic, MqttQos.atLeastOnce);
+    client?.updates!.listen((List<MqttReceivedMessage<MqttMessage>> messages) {
       messages.forEach((message) {
         final MqttPublishMessage receivedMessage =
             message.payload as MqttPublishMessage;
@@ -55,10 +67,11 @@ class MqttManager {
   static void publish(String topic, String message) {
     final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
     builder.addString(message);
-    client!.publishMessage(topic, MqttQos.exactlyOnce, builder.payload!);
+    client?.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);
   }
 
   static void disconnect() {
+    intentionalDisconnection = true;
     client?.disconnect();
   }
 }

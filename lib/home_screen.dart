@@ -6,6 +6,7 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
+String host = 'rmq2.pptik.id';
 String connectionStatus = 'Disconnected';
 String topic = 'testingmessage';
 String publish = '';
@@ -16,7 +17,20 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    connect();
+    MqttManager.onDisconnectedCall = onDisconnectedCall;
+    connect(host);
+  }
+
+  void onDisconnectedCall() {
+    setState(() {
+      connectionStatus = 'Disconnected';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Error Connection Timeout or Server Refused to Connect'),
+        duration: Duration(seconds: 1),
+      ),
+    );
   }
 
   @override
@@ -34,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           )
         },
-        child: const Icon(Icons.refresh),
+        child: const Icon(Icons.delete_outline),
       ),
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -101,11 +115,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   RoundedRectangleBorder(
                                       borderRadius:
                                           BorderRadius.circular(18.0)))),
-                          onPressed: connect,
+                          onPressed: () {
+                            connect(host);
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                duration: const Duration(seconds: 1),
+                                content: Text('Connecting to $host')));
+                          },
                           child: const Text('Connect')),
                   ],
                 )
               ]),
+              const SizedBox(height: 20),
+              Text('Host: $host'),
               const SizedBox(height: 20),
               connectionStates(),
               const SizedBox(height: 20),
@@ -135,8 +156,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void connect() {
-    MqttManager.connect();
+  void connect(host) {
+    MqttManager.connect(host);
     MqttManager.onConnected = () {
       MqttManager.subscribe(topic, (String message) {
         setState(() {
